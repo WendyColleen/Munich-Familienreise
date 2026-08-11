@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>München Familienreise</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --ground: #FAFAF7;
+    --ground-2: #F1EFEA;
+    --card: #FFFFFF;
+    --card-border: #E4E1D9;
+    --ink: #1C1B1A;
+    --ink-dim: #6B6660;
+    --yellow-deep: #7A6200;
+    --shadow: 0 1px 2px rgba(28,27,26,.04), 0 8px 24px rgba(28,27,26,.06);
+    --shadow-lg: 0 8px 16px rgba(28,27,26,.06), 0 24px 48px rgba(28,27,26,.10);
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--ground);
+    color: var(--ink);
+    overflow-x:hidden;
+  }
+  .display{
+    font-family: 'Archivo Black', 'Arial Narrow', sans-serif;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+  }
+  button{ font-family: inherit; }
+
+  /* ===================== DISCLAIMER ===================== */
+  .disclaimer-modal{
+    position: fixed; inset:0; z-index: 9999;
+    background: rgba(28,27,26,.55);
+    display:flex; align-items:center; justify-content:center;
+    padding: 1rem;
+  }
+  .disclaimer-modal.hidden{ display:none; }
+  .disclaimer-content{
+    background: var(--card);
+    border-radius: 18px;
+    padding: 1.75rem;
+    max-width: 480px;
+    max-height: 88vh;
+    overflow-y:auto;
+    box-shadow: var(--shadow-lg);
+  }
+  .disclaimer-content .xmark{ width: 30px; height: 30px; margin-bottom: 14px; }
+  .disclaimer-content h2{
+    font-family:'Archivo Black', sans-serif;
+    text-transform: uppercase;
+    font-size: 1.4rem;
+    margin: 0 0 1.1rem;
+  }
+  .disclaimer-section{
+    margin-bottom: 1.1rem; padding-bottom: 1.1rem;
+    border-bottom: 1px solid var(--card-border);
+  }
+  .disclaimer-section:last-of-type{ border-bottom:none; margin-bottom: 1.4rem; padding-bottom:0; }
+  .disclaimer-section h3{
+    font-size: .85rem; letter-spacing:.06em; text-transform:uppercase;
+    color: var(--ink-dim); margin: 0 0 .5rem; font-weight:700;
+  }
+  .disclaimer-section p{
+    color: var(--ink-dim); font-size: .9rem; line-height:1.55; margin: 0 0 .4rem;
+  }
+  .disclaimer-btn{
+    width:100%; padding: .9rem; border:none; border-radius: 10px;
+    background: var(--ink); color:#fff; font-size: .95rem; font-weight:700;
+    cursor:pointer; transition: opacity .2s;
+  }
+  .disclaimer-btn:hover{ opacity:.85; }
+
+  /* ===================== HEADER ===================== */
+  .header{
+    position: sticky; top:0; z-index: 500;
+    background: var(--ground);
+    border-bottom: 1px solid var(--card-border);
+    padding: 14px 18px;
+    display:flex; align-items:center; gap: 12px;
+  }
+  .back-btn{
+    display:none; align-items:center; gap:6px;
+    background: var(--ground-2); border: 1px solid var(--card-border); color: var(--ink);
+    padding: 8px 12px; border-radius: 999px; font-size: 13px; font-weight:600;
+    cursor:pointer; flex:none;
+  }
+  .back-btn.visible{ display:flex; }
+  .back-btn svg{ width:14px; height:14px; }
+  .header-logo{
+    height: 120px; display:block;
+  }
+  .header-titles{ flex:1; min-width:0; }
+  .header-titles h1{
+    margin:0; font-size: 15px; font-weight:700; line-height:1.2;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .header-titles .sub{
+    font-size: 11.5px; color: var(--ink-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  @media (max-width: 900px){
+    .header-titles{ display:none !important; }
+  }
+
+  /* ===================== LAYOUT ===================== */
+  .container{
+    display:grid; grid-template-columns: 1fr;
+  }
+  .container.tour-active{
+    grid-template-columns: 380px 1fr;
+    height: calc(100vh - 61px);
+  }
+  @media (max-width: 900px){
+    .container.tour-active{
+      grid-template-columns: 1fr;
+      grid-template-rows: 42vh 1fr;
+      height: calc(100vh - 61px);
+    }
+    .container.tour-active .sidebar{
+      height: 42vh;
+    }
+    .container.tour-active .map-container{
+      height: 100%;
+    }
+  }
+
+  .sidebar{
+    overflow-y:auto;
+    padding: 18px 18px 60px;
+    max-width: 640px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .container.tour-active .sidebar{
+    max-width: none; margin:0;
+    border-right: 1px solid var(--card-border);
+  }
+
+  /* ===================== TOUR PICKER ===================== */
+  #toursView h2{
+    font-family:'Archivo Black', sans-serif; font-size: 24px; text-transform:uppercase; margin: 6px 0 4px;
+  }
+  #toursView .subtitle{ color: var(--ink-dim); font-size: 13.5px; margin: 0 0 20px; }
+
+  .tour-card{
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-left: 4px solid var(--accent, var(--ink));
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow);
+    cursor:pointer;
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  .tour-card:hover{ transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .tour-card .leg-eyebrow{
+    font-size: 11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+    color: var(--accent, var(--ink)); margin-bottom: 6px; display:flex; align-items:center; gap:6px;
+  }
+  .tour-card .leg-eyebrow .legdot{ width:7px; height:7px; border-radius:50%; background: var(--accent, var(--ink)); }
+  .tour-title{ font-size: 18px; font-weight: 800; margin: 0 0 6px; }
+  .tour-meta{
+    display:flex; gap: 14px; font-size: 12.5px; color: var(--ink-dim); margin-bottom: 10px; flex-wrap:wrap;
+  }
+  .tour-meta span{ display:flex; align-items:center; gap:4px; }
+  .tour-meta svg{ width:13px; height:13px; }
+  .tour-description{ font-size: 13.5px; color: var(--ink-dim); line-height:1.55; margin-bottom: 14px; }
+  .start-btn{
+    width:100%; padding: 11px; border:none; border-radius: 10px;
+    background: var(--accent, var(--ink)); color:#fff; font-weight:700; font-size: 13.5px;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;
+    transition: opacity .2s;
+  }
+  .start-btn:hover{ opacity:.88; }
+  .start-btn svg{ width:14px; height:14px; }
+  .tour-card.on-yellow .start-btn{ color: var(--ink); }
+  .stop-item.active.on-yellow .stop-number{ color: var(--ink); }
+  .play-btn-large.on-yellow{ color: var(--ink); }
+
+  /* ===================== STOPS LIST ===================== */
+  #stopsView{ display:none; }
+  #stopsView.active{ display:block; }
+  #stopsView h2{
+    font-family:'Archivo Black', sans-serif; font-size: 21px; text-transform:uppercase; margin: 4px 0 4px;
+  }
+  #stopsView .subtitle{ color: var(--ink-dim); font-size: 13px; margin: 0 0 16px; }
+
+  .stop-item{
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 13px 14px;
+    margin-bottom: 10px;
+    cursor:pointer;
+    display:flex; align-items:center; gap: 12px;
+    transition: all .2s ease;
+  }
+  .stop-item:hover{ border-color: var(--accent, var(--ink)); transform: translateX(3px); }
+  .stop-item.visited{ background: var(--ground-2); }
+  .stop-item.active{ border-color: var(--accent, var(--ink)); box-shadow: var(--shadow); }
+  .stop-number{
+    background: var(--ink); color:#fff; width: 30px; height:30px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; flex:none;
+  }
+  .stop-item.visited .stop-number{ background: var(--accent, var(--ink)); opacity:.55; }
+  .stop-item.active .stop-number{ background: var(--accent, var(--ink)); }
+  .stop-info{ flex:1; min-width:0; }
+  .stop-name{ font-weight:700; font-size: 14.5px; margin-bottom:1px; }
+  .stop-status{ font-size: 11.5px; color: var(--ink-dim); }
+
+  /* ===================== MAP ===================== */
+  .map-container{ position:relative; background: var(--ground-2); display:none; }
+  .map-container.active{ display:block; }
+  #map{ width:100%; height:100%; }
+  /* compact map for single-stop legs — leaves room for inline detail */
+  .container.tour-active.single-stop{
+    grid-template-columns: 1fr;
+    grid-template-rows: 30vh 1fr;
+    height: calc(100vh - 61px);
+  }
+  .container.tour-active.single-stop .sidebar{
+    border-right: none;
+    order: 2;
+  }
+  .container.tour-active.single-stop .map-container{
+    order: 1;
+    height: 30vh;
+  }
+  @media (min-width: 901px){
+    .container.tour-active.single-stop{
+      grid-template-columns: 1fr 420px;
+      grid-template-rows: 1fr;
+      height: calc(100vh - 61px);
+    }
+    .container.tour-active.single-stop .sidebar{
+      order: 2;
+      border-left: 1px solid var(--card-border);
+      border-right: none;
+      max-width: none;
+    }
+    .container.tour-active.single-stop .map-container{
+      order: 1;
+      height: 100%;
+    }
+  }
+
+  /* ===================== INLINE STOP DETAIL ===================== */
+  .inline-detail{ display:none; }
+  .inline-detail.active{ display:block; }
+  .inline-detail .stop-image-wrap{
+    width:100%; height: 170px; border-radius: 14px; margin-bottom: 14px; overflow:hidden; position:relative;
+  }
+  .inline-detail .stop-image-wrap svg{ width:100%; height:100%; display:block; }
+  .inline-detail .stop-image-wrap img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .inline-detail h2{
+    font-size: 19px; font-weight:800; margin: 0 0 4px;
+  }
+  .inline-detail .inline-distance{ font-size: 12px; color: var(--ink-dim); margin-bottom: 14px; }
+  .inline-detail .modal-description{ margin-top: 14px; }
+
+  /* ===================== MODAL ===================== */
+  .modal{
+    display:none; position: fixed; inset:0; z-index: 2000;
+    background: rgba(28,27,26,.6);
+    align-items:center; justify-content:center;
+    padding: 16px;
+  }
+  .modal.active{ display:flex; }
+  .modal-content{
+    background: var(--card); border-radius: 18px; width: 100%; max-width: 540px;
+    max-height: 88vh; overflow-y:auto; box-shadow: var(--shadow-lg); position:relative;
+  }
+  .modal-header{
+    position: sticky; top:0; background: var(--card); z-index:5;
+    padding: 18px 20px 12px; border-bottom: 1px solid var(--card-border);
+    display:flex; justify-content:space-between; align-items:flex-start; gap: 12px;
+  }
+  .modal-title h2{ font-size: 19px; font-weight:800; margin:0 0 4px; }
+  .modal-distance{ font-size: 12px; color: var(--ink-dim); }
+  .modal-close{
+    background: var(--ground-2); border:none; width:32px; height:32px; border-radius:50%;
+    cursor:pointer; font-size: 16px; flex:none; color: var(--ink-dim);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .modal-close:hover{ background: var(--card-border); }
+  .modal-body{ padding: 18px 20px 22px; }
+
+  .stop-image-wrap{
+    width:100%; height: 190px; border-radius: 14px; margin-bottom: 16px; overflow:hidden;
+    position:relative;
+  }
+  .stop-image-wrap svg{ width:100%; height:100%; display:block; }
+  .stop-image-wrap img{ width:100%; height:100%; object-fit:cover; display:none; }
+
+  .navigation-buttons{ display:flex; gap:8px; margin-bottom: 14px; }
+  .nav-btn{
+    flex:1; padding: 10px; border:none; border-radius: 10px;
+    background: var(--ground-2); border: 1px solid var(--card-border); color: var(--ink);
+    font-weight:600; font-size: 12.5px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    transition: all .2s;
+  }
+  .nav-btn:hover{ background: var(--ink); color:#fff; border-color: var(--ink); }
+  .nav-btn svg{ width:14px; height:14px; }
+  .nav-btn-single{ font-size: 13.5px; padding: 11px; }
+
+  .audio-section{
+    background: var(--ground-2); border-radius: 12px; padding: 14px; margin-bottom: 16px;
+  }
+  .play-btn-large{
+    width:100%; padding: 13px; border:none; border-radius: 10px;
+    background: var(--accent, var(--ink)); color:#fff; font-weight:700; font-size: 14px;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+    transition: opacity .2s;
+  }
+  .play-btn-large:hover{ opacity: .88; }
+  .play-btn-large svg{ width:16px; height:16px; }
+  .play-btn-large.on-yellow{ color: var(--ink); }
+  .audio-progress{ margin-top: 12px; display:none; }
+  .audio-progress.active{ display:block; }
+  .progress-bar{
+    height: 6px; background: var(--card-border); border-radius:999px; cursor:pointer; overflow:hidden;
+  }
+  .progress-fill{ height:100%; width:0%; background: var(--accent, var(--ink)); border-radius:999px; }
+  .progress-time{
+    display:flex; justify-content:space-between; font-size: 11px; color: var(--ink-dim); margin-top:6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .audio-note{
+    font-size: 11px; color: var(--ink-dim); margin-top: 10px; display:flex; gap:6px; align-items:flex-start;
+  }
+  .audio-note svg{ width:13px; height:13px; flex:none; margin-top:1px; }
+
+  .modal-description{
+    font-size: 14.5px; line-height: 1.65; color: var(--ink); white-space:pre-line;
+  }
+
+  .placeholder-pill{
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:10.5px; color: var(--yellow-deep); margin-top: 12px;
+  }
+  .placeholder-pill svg{ width:12px; height:12px; }
+
+  footer{ text-align:center; padding: 24px 18px 40px; color: var(--ink-dim); font-size: 11px; opacity:.7; }
+
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+
+<!-- DISCLAIMER -->
+<div class="disclaimer-modal" id="disclaimerModal">
+  <div class="disclaimer-content">
+    <svg class="xmark" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
+      <path d="M 10 10 L 46 10 L 100 64 L 100 95 L 69 95 L 10 36 Z" fill="#2D70B7"/>
+      <path d="M 10 10 L 46 10 L 100 64 L 100 95 L 69 95 L 10 36 Z" fill="#EC1B31" transform="translate(220,0) scale(-1,1)"/>
+      <path d="M 10 10 L 46 10 L 100 64 L 100 95 L 69 95 L 10 36 Z" fill="#00A852" transform="translate(0,220) scale(1,-1)"/>
+      <path d="M 10 10 L 46 10 L 100 64 L 100 95 L 69 95 L 10 36 Z" fill="#E8D125" transform="translate(220,220) scale(-1,-1)"/>
+    </svg>
+<h2>Welcome to the 2026 X-Culture Xackathon</h2>
+<div class="disclaimer-section">
+  <h3>📍 Navigationsinformationen</h3>
+  <p>Diese App verwendet Koordinaten von Google Maps. Für optimale Ergebnisse empfehlen wir die Verwendung von Google Maps.</p>
+  <p>Andere Apps, wie beispielsweise Apple Maps oder OSM, interpretieren Koordinaten möglicherweise anders und bieten unter Umständen keine optimalen Fußwege an.</p>
+</div>
+<div class="disclaimer-section">
+  <h3>⚠️ Sicherheit & Haftung</h3>
+  <p>Achten Sie während der Nutzung dieser Tour stets auf Ihre Umgebung. Achten Sie auf den Verkehr, Fußgänger und die örtlichen Gegebenheiten.</p>
+  <p>Die Kartendaten werden von OpenStreetMap-Mitwirkenden bereitgestellt und können Ungenauigkeiten enthalten. Routen und Orte werden ohne Gewähr bereitgestellt.</p>
+  <p>Die Nutzung erfolgt auf eigene Gefahr. Die Entwickler dieser App übernehmen keine Haftung für Unfälle, Verletzungen oder Probleme, die während der Nutzung dieser Tour auftreten können.</p>
+</div>
+<button class="disclaimer-btn" onclick="acceptDisclaimer()">Start Exploring</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <button class="back-btn" id="backBtn" onclick="backToTours()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+    Back
+  </button>
+  <img class="header-logo" id="headerLogo" alt="München-Familienreise" />
+  <div class="header-titles" id="headerTitles" style="display:none;">
+    <h1 id="headerTourTitle"></h1>
+    <div class="sub">München-Familienreise 2026</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="container" id="container">
+  <div class="sidebar">
+    <div id="toursView">
+      <h2 class="display">Willkommen zur München-Familienreise 2026</h2>
+      <p class="subtitle">Im Folgenden findet ihr eure Schnitzeljagd-Herausforderungen. Schließt sie alle ab, um eure Schätze freizuschalten.</p>
+      <div id="toursList"></div>
+    </div>
+    <div id="stopsView">
+      <h2 id="tourTitleHeader"></h2>
+      <p class="subtitle" id="tourSubHeader">Tap a stop to learn more</p>
+<div id="stopsList"></div>
+      <div class="inline-detail" id="inlineDetail">
+        <div class="stop-image-wrap" id="inlineImageWrap"></div>
+        <h2 id="inlineStopTitle"></h2>
+        <div class="inline-distance" id="inlineStopDistance"></div>
+        <div class="navigation-buttons">
+          <button class="nav-btn nav-btn-single" onclick="openNavigation()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-7.58 7-12a7 7 0 10-14 0c0 4.42 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
+            Open in Google Maps
+          </button>
+        </div>
+        <div class="audio-section">
+          <button class="play-btn-large" id="playBtnInline" onclick="toggleAudio()">
+            <span id="playIconInline">&#9654;</span>
+            <span id="playTextInline">Play audio guide</span>
+          </button>
+          <div class="audio-progress" id="audioProgressInline">
+            <div class="progress-bar" id="progressBarInline" onclick="seekAudio(event)">
+              <div class="progress-fill" id="progressFillInline"></div>
+            </div>
+            <div class="progress-time">
+              <span id="currentTimeInline">0:00</span>
+              <span id="totalTimeInline">0:00</span>
+            </div>
+          </div>
+          <div class="audio-note" id="audioNoteInline" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            No audio file linked yet for this stop — add an audioUrl in the data.
+          </div>
+        </div>
+        <div class="modal-description" id="inlineStopDescription"></div>
+        <div class="placeholder-pill" id="placeholderPillInline" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4h13l-3 4 3 4H5"/></svg>
+          Placeholder content — edit in the data once confirmed
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="map-container" id="mapContainer"><div id="map"></div></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="stopModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">
+        <h2 id="modalStopTitle">Stop name</h2>
+        <div class="modal-distance" id="modalStopDistance"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="stop-image-wrap" id="modalImageWrap"></div>
+      <div class="navigation-buttons">
+        <button class="nav-btn nav-btn-single" onclick="openNavigation()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-7.58 7-12a7 7 0 10-14 0c0 4.42 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
+          Open in Google Maps
+        </button>
+      </div>
+      <div class="audio-section">
+        <button class="play-btn-large" id="playBtnModal" onclick="toggleAudio()">
+          <span id="playIconModal">&#9654;</span>
+          <span id="playTextModal">Play audio guide</span>
+        </button>
+        <div class="audio-progress" id="audioProgressModal">
+          <div class="progress-bar" id="progressBarModal" onclick="seekAudio(event)">
+            <div class="progress-fill" id="progressFillModal"></div>
+          </div>
+          <div class="progress-time">
+            <span id="currentTimeModal">0:00</span>
+            <span id="totalTimeModal">0:00</span>
+          </div>
+        </div>
+        <div class="audio-note" id="audioNote" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          No audio file linked yet for this stop — add an audioUrl in the data.
+        </div>
+      </div>
+      <div class="modal-description" id="modalStopDescription"></div>
+      <div class="placeholder-pill" id="placeholderPill" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4h13l-3 4 3 4H5"/></svg>
+        Placeholder content — edit in the data once confirmed
+      </div>
+    </div>
+  </div>
+</div>
+
+<audio id="audioPlayer"></audio>
+
+<footer>München-Familienreise &middot; 2026</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.getElementById('headerLogo').src = "https://wendycolleen.github.io/Munich-Family/Images/logo.jpg";
+
+/* ============================================================
+   COLORS PER LEG
+   ============================================================ */
+const LEG_COLORS = {
+  blue:   "#2D70B7",
+  red:    "#EC1B31",
+  green:  "#00A852",
+  yellow: "#E8D125",
+  pink:   "#FFC0CB",
+  ink:    "#1C1B1A"
+};
+// text-safe variants for use as text-on-white (yellow needs darkening to pass contrast)
+const LEG_TEXT_COLORS = {
+  blue:   "#2D70B7",
+  red:    "#EC1B31",
+  green:  "#00A852",
+  yellow: "#7A6200",
+  pink: "#FFC0CB",
+  ink:    "#1C1B1A"
+};
+
+/* ============================================================
+   PLACEHOLDER IMAGE GENERATOR (branded SVG card per stop)
+   ============================================================ */
+function placeholderSVG(name, hex){
+  const initial = (name || "?").trim().charAt(0).toUpperCase();
+  return `<svg viewBox="0 0 540 380" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="g-${hex.replace('#','')}" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="${hex}" stop-opacity="0.16"/>
+        <stop offset="1" stop-color="${hex}" stop-opacity="0.04"/>
+      </linearGradient>
+    </defs>
+    <rect width="540" height="380" fill="url(#g-${hex.replace('#','')})"/>
+    <circle cx="270" cy="155" r="54" fill="${hex}" fill-opacity="0.14"/>
+    <text x="270" y="175" font-family="Archivo Black, sans-serif" font-size="54" fill="${hex}" text-anchor="middle">${initial}</text>
+    <text x="270" y="240" font-family="Inter, sans-serif" font-size="14" fill="${hex}" fill-opacity="0.7" text-anchor="middle" letter-spacing="1">PHOTO COMING SOON</text>
+  </svg>`;
+}
+
+/* ============================================================
+   TOUR / LEG DATA
+   ============================================================ */
+const TOURS = [
+    {
+    id: 'Malou',
+    title: 'Malous Herausforderungen bei der Schatzsuche.',
+    color: 'pink',
+    duration: '90 min',
+    distance: '3 km',
+    description: `Eight stops tracing wealth, knowledge, and reinvention through the city centre and into the Northern Quarter.`,
+    route: [
+       {
+        name: 'Marienplatz',
+        lat: 48.13749340908795, lng: 11.575427038661978,
+        description: `Info about Marienplatz and her challenge.`,
+        audioUrl: 'https://wendycolleen.github.io/Munich-Family/Audio/Steve.mp3',
+        imageUrl: 'https://wendycolleen.github.io/Munich-Family/Images/Marienplatz.jpg',
+        placeholder: false
+      },
+	  {
+        name: 'Viktualienmarkt',
+        lat: 48.1355760343436, lng: 11.576086825168966,
+        description: `Info about Viktualienmarkt and her challenge`,
+        audioUrl: 'https://wendycolleen.github.io/Munich-Family/Audio/MacMayor.mp3',
+        imageUrl: 'https://wendycolleen.github.io/Munich-Family/Images/Viktualienmarkt.jpg',
+        placeholder: false
+      },
+	  	  {
+        name: "Frauenkirche",
+        lat: 48.13877942592572, lng: 11.5735919534621,
+        description: `Info about Frauenkirche and her challenge.`,
+        audioUrl: 'https://wendycolleen.github.io/Munich-Family/Audio/Chetham.mp3',
+        imageUrl: 'https://wendycolleen.github.io/Munich-Family/Images/Frauenkirche.jpg',
+        placeholder: false
+      },
+      {
+        name: 'Residenz München',
+        lat: 48.14196959268276, lng: 11.579496725169397,
+        description: `Info about Residenz and her challenge`,
+        audioUrl: 'https://wendycolleen.github.io/Munich-Family/Audio/Rylands.mp3',
+        imageUrl: 'https://wendycolleen.github.io/Munich-Family/Images/residenz.jpg',
+        placeholder: false
+      },
+      {
+        name: 'Hofgarten',
+        lat: 48.14296390755609, lng: 11.580075098183752,
+        description: `Info about Hofgarten and her challenge`,
+        audioUrl: 'https://wendycolleen.github.io/Munich-Family/Audio/GMX.mp3',
+        imageUrl: 'https://wendycolleen.github.io/Munich-Family/Images/GMX.jpg',
+        placeholder: false
+      },
+      {
+        name: 'Alter Hof',
+        lat: 48.13833262692275, lng: 11.578637280447746,
+        description: `Der Legende nach besaß Herzog Ludwig II. einen zahmen Affen, der sich frei im Schloss bewegen durfte. Eines Tages soll dieser kleine Affe den jungen Wittelsbacher-Sohn Ludwig von Bayern aus seiner Wiege entführt haben. Eine Verfolgungsjagd, an der das gesamte Hofpersonal beteiligt war, trieb den Affen schließlich mit dem Kind im Arm über einen hölzernen Erker hinaus auf das Dach. Unten zitterten die Hofbediensteten vor Angst; oben saß der Affe mit dem Baby. Nach einer Weile beruhigte sich das Tier jedoch und kletterte vorsichtig hinunter, um das Kind wieder in die Wiege zu legen. Seitdem ist der gotische Holz-Erker auf dem Burgstock auch als „Affenturm“ bekannt. Finde den Affenturm und mache ein Foto, auf dem du auf die Stelle zeigst, an der der Affe deiner Meinung nach mit dem Baby hinaufgeklettert ist.`,
+        audioUrl: 'https://wendycolleen.github.io/Munich-Family/Audio/CentLib.mp3',
+        imageUrl: 'https://wendycolleen.github.io/Munich-Family/Images/affenturm.jpg',
+        placeholder: false
+      },
+            {
+        name: 'FC Bayern World',
+        lat: 48.13843024615496, lng: 11.575144738661992,
+        description: `Info about FC Bayern World.`,
+        audioUrl: 'https://wendycolleen.github.io/Munich-Family/Audio/art.mp3',
+        imageUrl: 'https://wendycolleen.github.io/Munich-Family/Images/Art.png',
+        placeholder: false
+      },
+      {
+        name: 'Bijou Brigitte',
+        lat: 48.13681274110019, lng: 11.577099893854358,
+        description: `Herzlichen Glückwunsch, Malou! Du hast die Schatzsuche erfolgreich abgeschlossen. Hier wartet dein Schatz auf dich`,
+        audioUrl: 'https://wendycolleen.github.io/Munich-Family/Audio/Picc.mp3',
+        imageUrl: 'https://wendycolleen.github.io/Munich-Family/Images/bb.jpg',
+        placeholder: false
+      }
+    ]
+  },
+  {
+    id: 'Charlie',
+    title: 'Charlies Herausforderungen bei der Schatzsuche.',
+    color: 'green',
+    duration: '90 min',
+    distance: '3 km',
+    description: `Eight stops tracing wealth, knowledge, and reinvention through the city centre and into the Northern Quarter.`,
+    route: [
+       {
+        name: 'Marienplatz',
+        lat: 48.13749340908795, lng: 11.575427038661978,
+        description: `Info about Marienplatz and his challenge.`,
+        audioUrl: 'https://wendycolleen.github.io/Munich-Family/Audio/Steve.mp3',
+        imageUrl: 'https://wendycolleen.github.io/Munich-Family/Images/Marienplatz.jpg',
+        placeholder: false
+      },
+	  {
+        name: 'Viktualienmarkt',
+        lat: 48.1355760343436, lng: 11.576086825168966,
+        description: `Info about Viktualienmarkt and his challenge`,
+        audioUrl: 'https://wendycolleen.github.io/Munich-Family/Audio/MacMayor.mp3',
+        imageUrl: 'https://wendycolleen.github.io/Munich-Family/Images/Viktualienmarkt.jpg',
+        placeholder: false
+      },
+	  	  {
+        name: "Frauenkirche",
+        lat: 48.13877942592572, lng: 11.5735919534621,
+        description: `Info about Frauenkirche and his challenge.`,
+        audioUrl: 'https://wendycolleen.github.io/Munich-Family/Audio/Chetham.mp3',
+        imageUrl: 'https://wendycolleen.github.io/Munich-Family/Images/Frauenkirche.jpg',
+        placeholder: false
+      },
+      {
+        name: 'Residenz München',
+        lat: 48.14196959268276, lng: 11.579496725169397,
+        description: `Info about Residenz and his challenge`,
+        audioUrl: 'https://wendycolleen.github.io/Munich-Family/Audio/Rylands.mp3',
+        imageUrl: 'https://wendycolleen.github.io/Munich-Family/Images/residenz.jpg',
+        placeholder: false
+      },
+      {
+        name: 'Hofgarten',
+        lat: 48.14296390755609, lng: 11.580075098183752,
+        description: `Info about Hofgarten and his challenge`,
+        audioUrl: 'https://wendycolleen.github.io/Munich-Family/Audio/GMX.mp3',
+        imageUrl: 'https://wendycolleen.github.io/Munich-Family/Images/GMX.jpg',
+        placeholder: false
+      },
+      {
+        name: 'Alter Hof',
+        lat: 48.13833262692275, lng: 11.578637280447746,
+        description: `Vor vielen hundert Jahren lebte hier die Familie der bayerischen Herzöge.
+Eine alte Münchner Legende erzählt von einem zahmen Affen, der eines Tages den kleinen Prinzen Ludwig aus seiner Wiege nahm und mit ihm auf das Dach kletterte!
+Alle im Hof hielten vor Schreck den Atem an. Zum Glück brachte der Affe das Baby später sicher zurück. Aus dem kleinen Ludwig wurde später sogar Kaiser.
+DEINE AUFGABE: Finde den sogenannten Affenturm. Mache ein Foto, auf dem du auf die Stelle zeigst, an der der Affe deiner Meinung nach mit dem Baby hinaufgeklettert ist.`,
+        audioUrl: 'https://wendycolleen.github.io/Munich-Family/Audio/affenturm.mp3',
+        imageUrl: 'https://wendycolleen.github.io/Munich-Family/Images/affenturm.jpg',
+        placeholder: false
+      },
+            {
+        name: 'FC Bayern World',
+        lat: 48.13843024615496, lng: 11.575144738661992,
+        description: `Info about FC Bayern World.`,
+        audioUrl: 'https://wendycolleen.github.io/Munich-Family/Audio/art.mp3',
+        imageUrl: 'https://wendycolleen.github.io/Munich-Family/Images/fcbayern.png',
+        placeholder: false
+      },
+      {
+        name: 'Bijou Brigitte',
+        lat: 48.13681274110019, lng: 11.577099893854358,
+        description: `Charlie, deine Aufgabe als älterer Bruder ist es, deiner Schwester dabei zu helfen, etwas zu finden, das einer Prinzessin wirklich würdig ist.`,
+        audioUrl: 'https://wendycolleen.github.io/Munich-Family/Audio/Picc.mp3',
+        imageUrl: 'https://wendycolleen.github.io/Munich-Family/Images/bb.jpg',
+        placeholder: false
+      }
+    ]
+  }
+];
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function gmapsLink(lat, lng){
+  // Opens Google Maps' directions with the destination pre-filled;
+  // works as a deep link into the app on mobile, or the website on desktop.
+  return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=walking`;
+}
+function formatTime(seconds){
+  if(isNaN(seconds)) return '0:00';
+  const m = Math.floor(seconds/60), s = Math.floor(seconds%60);
+  return `${m}:${s.toString().padStart(2,'0')}`;
+}
+function iconClock(){
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>`;
+}
+function iconPin(){
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-7.58 7-12a7 7 0 10-14 0c0 4.42 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>`;
+}
+function iconArrow(){
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`;
+}
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let map = null;
+let currentTour = null;
+let stopMarkers = [];
+let routeLine = null;
+let audioPlayer = document.getElementById('audioPlayer');
+let currentStop = null;
+let currentAudioContext = 'modal'; // 'modal' or 'inline' — tells audio controls which DOM IDs to update
+let currentStopIndex = null;
+let visitedStops = new Set();
+let gpsWatchId = null;
+
+/* ============================================================
+   DISCLAIMER
+   ============================================================ */
+function acceptDisclaimer(){
+  document.getElementById('disclaimerModal').classList.add('hidden');
+  try{ localStorage.setItem('xculture_disclaimer_seen', 'true'); }catch(e){}
+}
+window.addEventListener('load', () => {
+  try{
+    if(localStorage.getItem('xculture_disclaimer_seen') === 'true'){
+      document.getElementById('disclaimerModal').classList.add('hidden');
+    }
+  }catch(e){}
+});
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function initApp(){
+  loadTours();
+  setupAudioEvents();
+}
+window.addEventListener('DOMContentLoaded', initApp);
+
+/* ============================================================
+   TOUR LIST (PICKER)
+   ============================================================ */
+function loadTours(){
+  const list = document.getElementById('toursList');
+  list.innerHTML = '';
+  TOURS.forEach(tour => {
+    const hex = LEG_COLORS[tour.color];
+    const textHex = LEG_TEXT_COLORS[tour.color];
+    const card = document.createElement('div');
+    card.className = 'tour-card' + (tour.color === 'yellow' ? ' on-yellow' : '');
+    card.style.setProperty('--accent', hex);
+    card.innerHTML = `
+      <div class="leg-eyebrow" style="color:${textHex}"><span class="legdot"></span></div>
+      <div class="tour-title">${tour.title}</div>
+      <div class="tour-meta">
+        <span>${iconClock()}${tour.duration}</span>
+        <span>${iconPin()}${tour.distance}</span>
+      </div>
+      <div class="tour-description">${tour.description}</div>
+      <button class="start-btn">Open ${tour.route.length>1 ? 'route' : 'details'}${iconArrow()}</button>
+    `;
+    card.querySelector('.start-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      startTour(tour);
+    });
+    card.addEventListener('click', () => startTour(tour));
+    list.appendChild(card);
+  });
+}
+
+/* ============================================================
+   START / EXIT TOUR
+   ============================================================ */
+function startTour(tour){
+  currentTour = tour;
+  visitedStops = new Set();
+  const isSingleStop = tour.route.length === 1;
+
+  document.getElementById('toursView').style.display = 'none';
+  document.getElementById('stopsView').classList.add('active');
+  document.getElementById('container').classList.add('tour-active');
+  document.getElementById('container').classList.toggle('single-stop', isSingleStop);
+  document.getElementById('mapContainer').classList.add('active');
+  document.getElementById('backBtn').classList.add('visible');
+  document.getElementById('headerTitles').style.display = 'block';
+  document.getElementById('headerTourTitle').textContent = tour.title;
+
+  document.getElementById('tourTitleHeader').textContent = tour.title;
+  document.getElementById('tourSubHeader').textContent = isSingleStop
+    ? ''
+    : 'Tap a stop to learn more';
+  document.getElementById('tourSubHeader').style.display = isSingleStop ? 'none' : 'block';
+
+  renderStopsList(tour);
+
+  document.getElementById('inlineDetail').classList.remove('active');
+  if(isSingleStop){
+    renderInlineDetail(tour.route[0], 0);
+  }
+
+  setTimeout(() => {
+    initMap(tour);
+  }, 50);
+}
+
+function backToTours(){
+  currentTour = null;
+  if(gpsWatchId !== null){
+    navigator.geolocation.clearWatch(gpsWatchId);
+    gpsWatchId = null;
+  }
+  document.getElementById('toursView').style.display = 'block';
+  document.getElementById('stopsView').classList.remove('active');
+  document.getElementById('container').classList.remove('tour-active');
+  document.getElementById('container').classList.remove('single-stop');
+  document.getElementById('mapContainer').classList.remove('active');
+  document.getElementById('backBtn').classList.remove('visible');
+  document.getElementById('headerTitles').style.display = 'none';
+  document.getElementById('inlineDetail').classList.remove('active');
+  closeModal();
+  stopAudio();
+  if(map){ map.remove(); map = null; }
+}
+
+/* ============================================================
+   STOPS LIST (SIDEBAR)
+   ============================================================ */
+function renderStopsList(tour){
+  const wrap = document.getElementById('stopsList');
+  wrap.innerHTML = '';
+  if(tour.route.length === 1) return; // single stop: inline detail covers it, no list needed
+
+  const hex = LEG_COLORS[tour.color];
+  tour.route.forEach((stop, i) => {
+    const item = document.createElement('div');
+    item.className = 'stop-item' + (tour.color === 'yellow' ? ' on-yellow' : '');
+    item.id = `stop-item-${i}`;
+    item.style.setProperty('--accent', hex);
+    item.innerHTML = `
+      <div class="stop-number">${i+1}</div>
+      <div class="stop-info">
+        <div class="stop-name">${stop.name}</div>
+        <div class="stop-status">Tap to view details</div>
+      </div>
+    `;
+    item.addEventListener('click', () => showStopModal(stop, i));
+    wrap.appendChild(item);
+  });
+}
+
+/* ============================================================
+   MAP
+   ============================================================ */
+function initMap(tour){
+  if(typeof L === 'undefined'){
+    // Leaflet hasn't loaded yet (slow network) — retry briefly, then give up gracefully
+    if(!window.__mapRetries) window.__mapRetries = 0;
+    if(window.__mapRetries < 30){
+      window.__mapRetries++;
+      setTimeout(() => initMap(tour), 200);
+    } else {
+      const mapEl = document.getElementById('map');
+      if(mapEl) mapEl.innerHTML = "<div style=\"display:flex;align-items:center;justify-content:center;height:100%;color:#6B6660;font-size:13px;text-align:center;padding:20px;\">Map couldn't load — check your internet connection.<br>Stop list and audio still work below.</div>";
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      document.querySelector('.sidebar').scrollTop = 0;
+    }
+    return;
+  }
+  window.__mapRetries = 0;
+  const mapEl = document.getElementById('map');
+  if(map){ map.remove(); }
+  const first = tour.route[0];
+  map = L.map('map', { zoomControl: true }).setView([first.lat, first.lng], tour.route.length > 1 ? 14 : 16);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  stopMarkers = [];
+  const hex = LEG_COLORS[tour.color];
+
+  tour.route.forEach((stop, i) => {
+    const icon = L.divIcon({
+      className: 'stop-marker',
+      html: `<div style="background:${hex}; color:#fff; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-family:'Archivo Black',sans-serif; font-size:13px; border:3px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,.25);">${i+1}</div>`,
+      iconSize: [36,36]
+    });
+    const marker = L.marker([stop.lat, stop.lng], { icon }).addTo(map)
+      .on('click', () => showStopModal(stop, i));
+    marker.bindTooltip(stop.name, { direction: 'top', offset: [0,-16] });
+    stopMarkers.push(marker);
+  });
+
+  if(tour.route.length > 1){
+    const coords = tour.route.map(s => [s.lat, s.lng]);
+    routeLine = L.polyline(coords, { color: hex, weight: 3, opacity: 0.55, dashArray: '6, 8' }).addTo(map);
+    map.fitBounds(routeLine.getBounds(), { padding: [40,40] });
+  }
+
+  setTimeout(() => {
+    if(map) map.invalidateSize();
+    // scroll reset goes here, after the map has finished laying out,
+    // so Leaflet can't push the page down again after we scroll up
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    document.querySelector('.sidebar').scrollTop = 0;
+  }, 200);
+
+  // second reset as safety net for slower mobile rendering
+  setTimeout(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    document.querySelector('.sidebar').scrollTop = 0;
+  }, 500);
+}
+
+/* ============================================================
+   STOP MODAL
+   ============================================================ */
+/* ============================================================
+   SHARED: render a stop's image into any wrap element
+   ============================================================ */
+function renderStopImage(imgWrapId, stop, hex){
+  const imgWrap = document.getElementById(imgWrapId);
+  if(stop.imageUrl && stop.imageUrl.trim()){
+    imgWrap.innerHTML = `<img src="${stop.imageUrl}" alt="${stop.name}" style="display:block;" onerror="console.warn('X-Culture: image failed to load —', this.src); this.parentElement.innerHTML = window.__placeholderFor('${stop.name.replace(/'/g,"\\'")}','${hex}')">`;
+  } else {
+    imgWrap.innerHTML = placeholderSVG(stop.name, hex);
+  }
+}
+window.__placeholderFor = (name, hex) => placeholderSVG(name, hex);
+
+function showStopModal(stop, index){
+  currentStop = stop;
+  currentStopIndex = index;
+  currentAudioContext = 'modal';
+  visitedStops.add(index);
+
+  document.querySelectorAll('.stop-item').forEach(el => el.classList.remove('active'));
+  const item = document.getElementById(`stop-item-${index}`);
+  if(item){ item.classList.add('active', 'visited'); }
+
+  const hex = LEG_COLORS[currentTour.color];
+  document.documentElement.style.setProperty('--accent', hex);
+  document.querySelector('.modal-content').style.setProperty('--accent', hex);
+  const playBtn = document.getElementById('playBtnModal');
+  playBtn.classList.toggle('on-yellow', currentTour.color === 'yellow');
+
+  document.getElementById('modalStopTitle').textContent = `${index+1}. ${stop.name}`;
+  document.getElementById('modalStopDistance').textContent = `${stop.lat.toFixed(5)}°N, ${stop.lng.toFixed(5)}°`;
+  document.getElementById('modalStopDescription').textContent = stop.description;
+
+  renderStopImage('modalImageWrap', stop, hex);
+
+  document.getElementById('placeholderPill').style.display = stop.placeholder ? 'inline-flex' : 'none';
+
+  stopAudio();
+  const hasAudio = stop.audioUrl && stop.audioUrl.trim();
+  document.getElementById('audioNote').style.display = hasAudio ? 'none' : 'flex';
+  document.getElementById('playBtnModal').style.opacity = hasAudio ? '1' : '.5';
+  document.getElementById('playBtnModal').style.cursor = hasAudio ? 'pointer' : 'not-allowed';
+
+  document.getElementById('stopModal').classList.add('active');
+}
+
+function closeModal(){
+  document.getElementById('stopModal').classList.remove('active');
+  document.querySelectorAll('.stop-item').forEach(el => el.classList.remove('active'));
+  stopAudio();
+}
+
+function renderInlineDetail(stop, index){
+  currentStop = stop;
+  currentStopIndex = index;
+  currentAudioContext = 'inline';
+  visitedStops.add(index);
+
+  const hex = LEG_COLORS[currentTour.color];
+  document.documentElement.style.setProperty('--accent', hex);
+  const playBtn = document.getElementById('playBtnInline');
+  playBtn.classList.toggle('on-yellow', currentTour.color === 'yellow');
+
+  document.getElementById('inlineStopTitle').textContent = stop.name;
+  document.getElementById('inlineStopDistance').textContent = `${stop.lat.toFixed(5)}°N, ${stop.lng.toFixed(5)}°`;
+  document.getElementById('inlineStopDescription').textContent = stop.description;
+
+  renderStopImage('inlineImageWrap', stop, hex);
+
+  document.getElementById('placeholderPillInline').style.display = stop.placeholder ? 'inline-flex' : 'none';
+
+  stopAudio();
+  const hasAudio = stop.audioUrl && stop.audioUrl.trim();
+  document.getElementById('audioNoteInline').style.display = hasAudio ? 'none' : 'flex';
+  playBtn.style.opacity = hasAudio ? '1' : '.5';
+  playBtn.style.cursor = hasAudio ? 'pointer' : 'not-allowed';
+
+  document.getElementById('inlineDetail').classList.add('active');
+}
+
+/* ============================================================
+   NAVIGATION — opens Google Maps walking directions to the stop.
+   The maps.google.com link deep-links into the Google Maps app on
+   mobile (if installed) or opens the Google Maps site otherwise —
+   no custom URI-scheme guessing or timers needed.
+   ============================================================ */
+function openNavigation(){
+  if(!currentStop) return;
+  window.open(gmapsLink(currentStop.lat, currentStop.lng), '_blank');
+}
+
+/* ============================================================
+   AUDIO CONTROLS
+   ============================================================ */
+function audioIds(){
+  const suffix = currentAudioContext === 'inline' ? 'Inline' : 'Modal';
+  return {
+    playIcon: 'playIcon' + suffix,
+    playText: 'playText' + suffix,
+    playBtn: 'playBtn' + suffix,
+    progressFill: 'progressFill' + suffix,
+    progressBar: 'progressBar' + suffix,
+    currentTime: 'currentTime' + suffix,
+    totalTime: 'totalTime' + suffix,
+    audioProgress: 'audioProgress' + suffix
+  };
+}
+
+function setupAudioEvents(){
+  audioPlayer.addEventListener('loadedmetadata', () => {
+    const ids = audioIds();
+    const el = document.getElementById(ids.totalTime);
+    if(el) el.textContent = formatTime(audioPlayer.duration);
+  });
+  audioPlayer.addEventListener('timeupdate', () => {
+    const ids = audioIds();
+    const pct = (audioPlayer.currentTime / audioPlayer.duration) * 100 || 0;
+    const fill = document.getElementById(ids.progressFill);
+    const cur = document.getElementById(ids.currentTime);
+    if(fill) fill.style.width = pct + '%';
+    if(cur) cur.textContent = formatTime(audioPlayer.currentTime);
+  });
+  audioPlayer.addEventListener('ended', () => {
+    const ids = audioIds();
+    const icon = document.getElementById(ids.playIcon);
+    const text = document.getElementById(ids.playText);
+    if(icon) icon.innerHTML = '&#9654;';
+    if(text) text.textContent = 'Play audio guide';
+  });
+}
+
+function toggleAudio(){
+  if(!currentStop) return;
+  if(!currentStop.audioUrl || !currentStop.audioUrl.trim()) return;
+  const ids = audioIds();
+  const icon = document.getElementById(ids.playIcon);
+  const text = document.getElementById(ids.playText);
+  const progress = document.getElementById(ids.audioProgress);
+
+  if(audioPlayer.paused){
+    audioPlayer.src = currentStop.audioUrl;
+    audioPlayer.play().then(() => {
+      if(icon) icon.innerHTML = '&#10074;&#10074;';
+      if(text) text.textContent = 'Pause audio';
+      if(progress) progress.classList.add('active');
+    }).catch(() => {
+      alert("Couldn't play audio. Check your connection and try again.");
+    });
+  } else {
+    audioPlayer.pause();
+    if(icon) icon.innerHTML = '&#9654;';
+    if(text) text.textContent = 'Resume audio';
+  }
+}
+function stopAudio(){
+  audioPlayer.pause();
+  audioPlayer.currentTime = 0;
+  ['Modal','Inline'].forEach(suffix => {
+    const icon = document.getElementById('playIcon' + suffix);
+    const text = document.getElementById('playText' + suffix);
+    const progress = document.getElementById('audioProgress' + suffix);
+    if(icon) icon.innerHTML = '&#9654;';
+    if(text) text.textContent = 'Play audio guide';
+    if(progress) progress.classList.remove('active');
+  });
+}
+function seekAudio(e){
+  if(!audioPlayer.duration) return;
+  const ids = audioIds();
+  const bar = document.getElementById(ids.progressBar);
+  const pct = e.offsetX / bar.offsetWidth;
+  audioPlayer.currentTime = audioPlayer.duration * pct;
+}
+</script>
+</body>
+</html>

@@ -53,7 +53,7 @@
     overflow-y:auto;
     box-shadow: var(--shadow-lg);
   }
-  .disclaimer-content .xmark{ width: 30px; height: 30px; margin-bottom: 14px; }
+  .disclaimer-content .disclaimer-logo{ display:block; height: 48px; width:auto; object-fit:contain; margin-bottom: 14px; }
   .disclaimer-content h2{
     font-family:'Archivo Black', sans-serif;
     text-transform: uppercase;
@@ -360,22 +360,17 @@
 <!-- DISCLAIMER -->
 <div class="disclaimer-modal" id="disclaimerModal">
   <div class="disclaimer-content">
-    <svg class="xmark" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
-      <path d="M 10 10 L 46 10 L 100 64 L 100 95 L 69 95 L 10 36 Z" fill="#2D70B7"/>
-      <path d="M 10 10 L 46 10 L 100 64 L 100 95 L 69 95 L 10 36 Z" fill="#EC1B31" transform="translate(220,0) scale(-1,1)"/>
-      <path d="M 10 10 L 46 10 L 100 64 L 100 95 L 69 95 L 10 36 Z" fill="#00A852" transform="translate(0,220) scale(1,-1)"/>
-      <path d="M 10 10 L 46 10 L 100 64 L 100 95 L 69 95 L 10 36 Z" fill="#E8D125" transform="translate(220,220) scale(-1,-1)"/>
-    </svg>
+    <img class="disclaimer-logo" src="https://wendycolleen.github.io/Munich-Familienreise/Images/logo.jpg" alt="München-Familienreise">
 <h2>Willkommen zur Familienreise nach München 2026.</h2>
 <div class="disclaimer-section">
   <h3>📍 Navigationsinformationen</h3>
   <p>Diese App verwendet Koordinaten von Google Maps. Für optimale Ergebnisse empfehlen wir die Verwendung von Google Maps.</p>
-  <p>Andere Apps, wie beispielsweise Apple Maps oder OSM, interpretieren Koordinaten möglicherweise anders und bieten unter Umständen keine optimalen Fußwege an.</p>
+  <p>Andere Apps, wie beispielsweise Apple Maps oder OSM, interpretieren dieselben Koordinaten teils abweichend — das kann zu Standortabweichungen und nicht optimalen Fußwegen führen.</p>
 </div>
 <div class="disclaimer-section">
   <h3>⚠️ Sicherheit & Haftung</h3>
   <p>Achten Sie während der Nutzung dieser Tour stets auf Ihre Umgebung. Achten Sie auf den Verkehr, Fußgänger und die örtlichen Gegebenheiten.</p>
-  <p>Die Kartendaten werden von OpenStreetMap-Mitwirkenden bereitgestellt und können Ungenauigkeiten enthalten. Routen und Orte werden ohne Gewähr bereitgestellt.</p>
+  <p>Die hier angezeigte Karte basiert auf Kartendaten von OpenStreetMap-Mitwirkenden und kann Ungenauigkeiten enthalten. Routen und Orte werden ohne Gewähr bereitgestellt.</p>
   <p>Die Nutzung erfolgt auf eigene Gefahr. Die Entwickler dieser App übernehmen keine Haftung für Unfälle, Verletzungen oder Probleme, die während der Nutzung dieser Tour auftreten können.</p>
 </div>
 <button class="disclaimer-btn" onclick="acceptDisclaimer()">Start Exploring</button>
@@ -742,11 +737,11 @@ let gpsWatchId = null;
    ============================================================ */
 function acceptDisclaimer(){
   document.getElementById('disclaimerModal').classList.add('hidden');
-  try{ localStorage.setItem('xculture_disclaimer_seen', 'true'); }catch(e){}
+  try{ localStorage.setItem('familienreise_disclaimer_seen', 'true'); }catch(e){}
 }
 window.addEventListener('load', () => {
   try{
-    if(localStorage.getItem('xculture_disclaimer_seen') === 'true'){
+    if(localStorage.getItem('familienreise_disclaimer_seen') === 'true'){
       document.getElementById('disclaimerModal').classList.add('hidden');
     }
   }catch(e){}

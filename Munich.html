@@ -366,7 +366,7 @@
       <path d="M 10 10 L 46 10 L 100 64 L 100 95 L 69 95 L 10 36 Z" fill="#00A852" transform="translate(0,220) scale(1,-1)"/>
       <path d="M 10 10 L 46 10 L 100 64 L 100 95 L 69 95 L 10 36 Z" fill="#E8D125" transform="translate(220,220) scale(-1,-1)"/>
     </svg>
-<h2>Welcome to the 2026 X-Culture Xackathon</h2>
+<h2>Willkommen zur Familienreise nach München 2026.</h2>
 <div class="disclaimer-section">
   <h3>📍 Navigationsinformationen</h3>
   <p>Diese App verwendet Koordinaten von Google Maps. Für optimale Ergebnisse empfehlen wir die Verwendung von Google Maps.</p>
@@ -946,7 +946,7 @@ function initMap(tour){
 function renderStopImage(imgWrapId, stop, hex){
   const imgWrap = document.getElementById(imgWrapId);
   if(stop.imageUrl && stop.imageUrl.trim()){
-    imgWrap.innerHTML = `<img src="${stop.imageUrl}" alt="${stop.name}" style="display:block;" onerror="console.warn('X-Culture: image failed to load —', this.src); this.parentElement.innerHTML = window.__placeholderFor('${stop.name.replace(/'/g,"\\'")}','${hex}')">`;
+    imgWrap.innerHTML = `<img src="${stop.imageUrl}" alt="${stop.name}" style="display:block;" onerror="console.warn('Familienreise: image failed to load —', this.src); this.parentElement.innerHTML = window.__placeholderFor('${stop.name.replace(/'/g,"\\'")}','${hex}')">`;
   } else {
     imgWrap.innerHTML = placeholderSVG(stop.name, hex);
   }
